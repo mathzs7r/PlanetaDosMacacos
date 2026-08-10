@@ -8,10 +8,17 @@ Além do painel principal (gráfico de linha comparando os 6 cursos da UEPG, tab
 filtrável e as 8 questões de análise), há **12 páginas individuais de curso** geradas por
 um template único (`curso.js`), acessíveis pelo menu lateral.
 
+Todo gráfico de linha tem, ao lado, um painel de **análise objetiva** (`analise.js`) que
+explica o que a série mostra, o que provoca os movimentos (oferta de vagas × procura),
+a tendência estimada por regressão linear, a relação com a nota mínima e as ressalvas de
+leitura. O painel é calculado dos próprios dados, acompanha os filtros do painel principal
+e pode ser recolhido pelo botão *Ocultar*.
+
 ## Links
 
-- Repositório: <https://github.com/mathzs7r/concorrencia-cotas-uepg>
-- GitHub Pages: <https://mathzs7r.github.io/concorrencia-cotas-uepg/>
+- Repositório: <https://github.com/mathzs7r/PlanetaDosMacacos>
+- GitHub Pages: <https://mathzs7r.github.io/PlanetaDosMacacos/>
+- Repositório inicial (mesmo conteúdo): <https://github.com/mathzs7r/concorrencia-cotas-uepg>
 
 ## Tecnologias
 
@@ -30,6 +37,7 @@ um template único (`curso.js`), acessíveis pelo menu lateral.
 ├── style.css           # identidade visual (tema escuro) sobre o Bootstrap
 ├── script.js           # painel principal: estatísticas, gráfico e tabela
 ├── curso.js            # template dinâmico das páginas de curso
+├── analise.js          # análise objetiva exibida ao lado de cada gráfico de linha
 ├── nav.js              # menu lateral e rodapé compartilhados
 ├── util.js             # formatadores pt-BR, paletas, estatística e tema do Chart.js
 ├── db.js               # base UEPG (export const db) — 49 cursos, 2016–2025

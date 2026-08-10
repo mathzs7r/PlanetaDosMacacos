@@ -1,3 +1,4 @@
+import { analisePainel, criarPainelAnalise } from "./analise.js";
 import { db } from "./db.js";
 import { MENU, montarNavegacao, montarRodape } from "./nav.js";
 import {
@@ -133,6 +134,16 @@ function cotaSelecionada() {
 }
 
 let grafico = null;
+let painelAnalise = null;
+
+function montarPainelAnalise() {
+  const layout = document.getElementById("grafico-layout");
+  const { painel, atualizar } = criarPainelAnalise(() =>
+    analisePainel(linhasDaCota(cotaSelecionada()), cursosSelecionados(), cotaSelecionada()),
+  );
+  layout.appendChild(painel);
+  painelAnalise = atualizar;
+}
 
 function montarSelectCota() {
   const select = document.getElementById("select-cota");
@@ -281,6 +292,7 @@ function renderizarGrafico(linhas) {
 
   if (grafico) grafico.destroy();
   grafico = new Chart(document.getElementById("grafico-linha"), config);
+  if (painelAnalise) painelAnalise();
 }
 
 function renderizarTabela() {
@@ -611,6 +623,7 @@ aplicarTemaChart(Chart);
 montarSelectCota();
 montarCheckboxesCursos();
 montarFiltrosTabela();
+montarPainelAnalise();
 montarGradeCursos();
 renderizarFontes();
 renderizarTudo();

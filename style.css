@@ -1,0 +1,49 @@
+:root {
+  --azul-uepg: #0b3d6b;
+  --azul-claro: #1b6ca8;
+}
+
+body {
+  background-color: #f5f7fa;
+}
+
+.hero {
+  background: linear-gradient(120deg, var(--azul-uepg), var(--azul-claro));
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 60vh;
+  min-height: 320px;
+}
+
+.card-indicador .valor {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--azul-uepg);
+}
+
+.card-indicador .rotulo {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c757d;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: rgba(27, 108, 168, 0.12);
+  color: var(--azul-uepg);
+}
+
+table caption {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.legenda-cor {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+}

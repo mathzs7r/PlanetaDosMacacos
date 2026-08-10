@@ -2,6 +2,7 @@
  * Renderiza uma página de curso (gráfico de linha por tipo de cota,
  * tabela filtrável e leitura dos dados) a partir do db.js / db_utfpr.js.
  */
+import { analiseCurso, criarPainelAnalise } from "./analise.js";
 import { db } from "./db.js";
 import { dbUtfpr } from "./db_utfpr.js";
 import { montarNavegacao, montarRodape } from "./nav.js";
@@ -144,6 +145,7 @@ function montarSecaoKpis(curso, dados) {
 function montarGrafico(curso, dados, instituicao) {
   const secao = criarElemento("section", "section section--alt");
   const container = criarElemento("div", "container");
+  const layout = criarElemento("div", "grafico-layout");
   const caixa = criarElemento("div", "grafico-container");
   caixa.appendChild(criarElemento("h3", null, `Candidatos por vaga — ${curso.nome}`));
   caixa.appendChild(
@@ -163,7 +165,9 @@ function montarGrafico(curso, dados, instituicao) {
   );
   wrapper.appendChild(canvas);
   caixa.appendChild(wrapper);
-  container.appendChild(caixa);
+  const { painel } = criarPainelAnalise(() => analiseCurso(curso, dados));
+  layout.append(caixa, painel);
+  container.appendChild(layout);
   secao.appendChild(container);
 
   const anos = [...new Set(dados.map((l) => l.ano))].sort((a, b) => a - b);

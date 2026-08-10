@@ -1,4 +1,17 @@
 import { db } from "./db.js";
+import { MENU, montarNavegacao, montarRodape } from "./nav.js";
+import {
+  PALETA_CURSOS as CORES,
+  aplicarTemaChart,
+  correlacao,
+  criarElemento,
+  desvioPadrao,
+  fmtInteiro,
+  fmtMoeda as formatadorMoeda,
+  fmtNumero as formatadorNumero,
+  forcaCorrelacao,
+  media,
+} from "./util.js";
 
 const CURSOS_ANALISADOS = [
   "Medicina",
@@ -7,15 +20,6 @@ const CURSOS_ANALISADOS = [
   "Engenharia Civil",
   "Engenharia de Computação",
   "Administração",
-];
-
-const CORES = [
-  "#d62728",
-  "#1f77b4",
-  "#2ca02c",
-  "#ff7f0e",
-  "#9467bd",
-  "#17becf",
 ];
 
 const COTA_PADRAO = "Escola Pública";
@@ -29,6 +33,11 @@ const FONTES = [
   },
   {
     texto:
+      "Concorrência dos cursos da UTFPR — Câmpus Ponta Grossa (2023 a 2025), consolidada em db_utfpr.js a partir do levantamento do grupo nos relatórios do processo seletivo.",
+    url: "https://www.utfpr.edu.br/cursos",
+  },
+  {
+    texto:
       "Salário médio das profissões: Portal Salário (salario.com.br), com base no CAGED/MTE — regime CLT, Brasil, consulta em agosto de 2026.",
     url: "https://www.salario.com.br/",
   },
@@ -37,15 +46,6 @@ const FONTES = [
 const cursos = CURSOS_ANALISADOS.map((nome) =>
   db.cursos.find((curso) => curso.nome === nome),
 ).filter(Boolean);
-
-const formatadorNumero = new Intl.NumberFormat("pt-BR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
 
 function tiposDeCota() {
   const tipos = new Set();
@@ -81,33 +81,6 @@ function linhasDaCota(tipoCota) {
     }),
   );
   return linhas;
-}
-
-function media(valores) {
-  return valores.reduce((soma, v) => soma + v, 0) / valores.length;
-}
-
-function desvioPadrao(valores) {
-  const m = media(valores);
-  return Math.sqrt(media(valores.map((v) => (v - m) ** 2)));
-}
-
-function correlacao(xs, ys) {
-  const mx = media(xs);
-  const my = media(ys);
-  const num = xs.reduce((soma, x, i) => soma + (x - mx) * (ys[i] - my), 0);
-  const den = Math.sqrt(
-    xs.reduce((s, x) => s + (x - mx) ** 2, 0) * ys.reduce((s, y) => s + (y - my) ** 2, 0),
-  );
-  return den === 0 ? 0 : num / den;
-}
-
-function forcaCorrelacao(r) {
-  const abs = Math.abs(r);
-  if (abs >= 0.7) return "forte";
-  if (abs >= 0.4) return "moderada";
-  if (abs >= 0.2) return "fraca";
-  return "praticamente inexistente";
 }
 
 function estatisticasPorCurso(linhas) {
@@ -176,24 +149,50 @@ function montarSelectCota() {
 function montarCheckboxesCursos() {
   const grupo = document.getElementById("grupo-cursos");
   cursos.forEach((curso, indice) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "form-check";
+    const cor = CORES[indice % CORES.length];
+    const chip = document.createElement("label");
+    chip.className = "chip ativo";
+    chip.style.setProperty("--cor-curso", cor);
     const input = document.createElement("input");
-    input.className = "form-check-input";
     input.type = "checkbox";
     input.value = curso.nome;
     input.id = `curso-${indice}`;
     input.checked = true;
-    input.addEventListener("change", renderizarTudo);
-    const label = document.createElement("label");
-    label.className = "form-check-label";
-    label.htmlFor = input.id;
-    const cor = document.createElement("span");
-    cor.className = "legenda-cor";
-    cor.style.backgroundColor = CORES[indice % CORES.length];
-    label.append(cor, document.createTextNode(curso.nome));
-    wrapper.append(input, label);
-    grupo.appendChild(wrapper);
+    input.addEventListener("change", () => {
+      chip.classList.toggle("ativo", input.checked);
+      renderizarTudo();
+    });
+    const marcador = document.createElement("span");
+    marcador.className = "legenda-cor";
+    marcador.style.color = cor;
+    chip.append(input, marcador, document.createTextNode(curso.nome));
+    grupo.appendChild(chip);
+  });
+}
+
+function montarGradeCursos() {
+  const grade = document.getElementById("grade-cursos");
+  MENU.forEach((grupo) => {
+    const card = criarElemento("article", "question-card");
+    card.appendChild(criarElemento("span", "q-number", grupo.grupo));
+    card.appendChild(
+      criarElemento(
+        "h3",
+        "q-title",
+        grupo.grupo === "UEPG" ? "Universidade Estadual de Ponta Grossa" : "UTFPR — Ponta Grossa",
+      ),
+    );
+    const lista = criarElemento("ul", "lista-fontes");
+    grupo.itens.forEach((item) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = item.href;
+      a.textContent = item.nome;
+      li.appendChild(a);
+      lista.appendChild(li);
+    });
+    card.appendChild(lista);
+    grade.appendChild(card);
   });
 }
 
@@ -238,11 +237,15 @@ function renderizarGrafico(linhas) {
       }),
       borderColor: cor,
       backgroundColor: cor,
-      tension: 0.25,
+      tension: 0.3,
       spanGaps: true,
+      borderWidth: 2.5,
       pointRadius: 3,
-      pointHoverRadius: 6,
+      pointHoverRadius: 7,
     }));
+
+  document.getElementById("grafico-subtitulo").textContent =
+    `Cota ${cotaSelecionada()} · fonte: informativos oficiais do Vestibular de Verão da UEPG`;
 
   const config = {
     type: "line",
@@ -255,12 +258,8 @@ function renderizarGrafico(linhas) {
         title: {
           display: true,
           text: `Candidatos por vaga na cota ${cotaSelecionada()} — UEPG, 2016 a 2025`,
+          color: "#e8eaf0",
           font: { size: 16 },
-        },
-        subtitle: {
-          display: true,
-          text: "Fonte: informativos oficiais do Vestibular de Verão da UEPG",
-          padding: { bottom: 12 },
         },
         legend: { display: true, position: "bottom" },
         tooltip: {
@@ -306,36 +305,49 @@ function renderizarTabela() {
 
   const corpo = document.getElementById("tabela-corpo");
   corpo.textContent = "";
+  const maximo = Math.max(...linhas.map((l) => l.concorrencia));
+
   filtradas.forEach((linha) => {
     const tr = document.createElement("tr");
-    const celulas = [
-      { texto: String(linha.ano) },
-      { texto: linha.curso },
-      { texto: linha.candidatos.toLocaleString("pt-BR"), fim: true },
-      { texto: linha.vagas.toLocaleString("pt-BR"), fim: true },
-      { texto: formatadorNumero.format(linha.concorrencia), fim: true },
-      {
-        texto: linha.notaMinima != null ? linha.notaMinima.toLocaleString("pt-BR") : "—",
-        fim: true,
-      },
-      {
-        texto: linha.salario != null ? formatadorMoeda.format(linha.salario) : "—",
-        titulo: linha.cargo ?? "",
-        fim: true,
-      },
-    ];
-    celulas.forEach((celula) => {
-      const td = document.createElement("td");
-      td.textContent = celula.texto;
-      if (celula.fim) td.className = "text-end";
-      if (celula.titulo) td.title = celula.titulo;
-      tr.appendChild(td);
-    });
+    tr.appendChild(criarElemento("td", null, String(linha.ano)));
+    tr.appendChild(criarElemento("td", null, linha.curso));
+
+    const tdCota = criarElemento("td");
+    const tag = criarElemento("span", "curso-tag", tipo);
+    tag.dataset.cota = tipo;
+    tdCota.appendChild(tag);
+    tr.appendChild(tdCota);
+
+    tr.appendChild(criarElemento("td", "num", fmtInteiro.format(linha.candidatos)));
+    tr.appendChild(criarElemento("td", "num", fmtInteiro.format(linha.vagas)));
+
+    const tdConc = criarElemento("td", "num", formatadorNumero.format(linha.concorrencia));
+    const barra = criarElemento("div", "barra");
+    const preenchimento = criarElemento("div", "barra-fill");
+    preenchimento.style.width = `${(linha.concorrencia / maximo) * 100}%`;
+    barra.appendChild(preenchimento);
+    tdConc.appendChild(barra);
+    tr.appendChild(tdConc);
+
+    tr.appendChild(
+      criarElemento(
+        "td",
+        "num",
+        linha.notaMinima != null ? fmtInteiro.format(linha.notaMinima) : "—",
+      ),
+    );
+    const tdSalario = criarElemento(
+      "td",
+      "num",
+      linha.salario != null ? formatadorMoeda.format(linha.salario) : "—",
+    );
+    if (linha.cargo) tdSalario.title = linha.cargo;
+    tr.appendChild(tdSalario);
     corpo.appendChild(tr);
   });
 
   document.getElementById("tabela-caption").textContent =
-    `${filtradas.length} registros — cota ${tipo}. Salário médio mensal do cargo típico da ` +
+    `${filtradas.length} registros — cota ${tipo}. * Salário médio mensal do cargo típico da ` +
     "profissão (Portal Salário / CAGED-MTE, agosto de 2026).";
 }
 
@@ -379,28 +391,13 @@ function renderizarCards(linhas) {
   const container = document.getElementById("cards-resumo");
   container.textContent = "";
   indicadores.forEach((indicador) => {
-    const coluna = document.createElement("div");
-    coluna.className = "col-12 col-sm-6 col-lg-4";
-    const card = document.createElement("div");
-    card.className = "card h-100 shadow-sm card-indicador";
-    const corpo = document.createElement("div");
-    corpo.className = "card-body";
-    const rotulo = document.createElement("div");
-    rotulo.className = "rotulo";
-    rotulo.textContent = indicador.rotulo;
-    const valor = document.createElement("div");
-    valor.className = "valor";
-    valor.textContent = indicador.valor;
-    corpo.append(rotulo, valor);
+    const card = criarElemento("article", "kpi");
+    card.appendChild(criarElemento("p", "rotulo", indicador.rotulo));
+    card.appendChild(criarElemento("p", "valor", indicador.valor));
     if (indicador.detalhe) {
-      const detalhe = document.createElement("div");
-      detalhe.className = "text-secondary small";
-      detalhe.textContent = indicador.detalhe;
-      corpo.appendChild(detalhe);
+      card.appendChild(criarElemento("p", "detalhe", indicador.detalhe));
     }
-    card.appendChild(corpo);
-    coluna.appendChild(card);
-    container.appendChild(coluna);
+    container.appendChild(card);
   });
 }
 
@@ -609,8 +606,12 @@ function renderizarTudo() {
   renderizarAnalise(linhas);
 }
 
+montarNavegacao();
+aplicarTemaChart(Chart);
 montarSelectCota();
 montarCheckboxesCursos();
 montarFiltrosTabela();
+montarGradeCursos();
 renderizarFontes();
 renderizarTudo();
+montarRodape();

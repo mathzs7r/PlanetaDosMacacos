@@ -6,8 +6,8 @@ notas mínimas de aprovação e salário médio das profissões correspondentes.
 
 ## Links
 
-- Repositório: <!-- preencher após o push -->
-- GitHub Pages: <!-- preencher após habilitar o Pages -->
+- Repositório: <https://github.com/mathzs7r/concorrencia-cotas-uepg>
+- GitHub Pages: <https://mathzs7r.github.io/concorrencia-cotas-uepg/>
 
 ## Tecnologias
 

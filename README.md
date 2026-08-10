@@ -1,8 +1,12 @@
-# Concorrência de Cursos em Cotas Públicas — UEPG (2016–2025)
+# Concorrência de Cursos em Cotas Públicas — UEPG / UTFPR-PG (2016–2025)
 
-Website de análise descritiva da concorrência (candidatos por vaga) em **cotas de escola
-pública** no Vestibular de Verão da UEPG (campus Ponta Grossa), entre 2016 e 2025, com
-notas mínimas de aprovação e salário médio das profissões correspondentes.
+Website de análise descritiva da concorrência (candidatos por vaga) em **cotas públicas**
+no Vestibular de Verão da UEPG (2016–2025) e no Processo Seletivo da UTFPR — Câmpus Ponta
+Grossa (2023–2025), com notas mínimas de aprovação e salário médio das profissões.
+
+Além do painel principal (gráfico de linha comparando os 6 cursos da UEPG, tabela
+filtrável e as 8 questões de análise), há **12 páginas individuais de curso** geradas por
+um template único (`curso.js`), acessíveis pelo menu lateral.
 
 ## Links
 
@@ -20,12 +24,21 @@ notas mínimas de aprovação e salário médio das profissões correspondentes.
 
 ```
 /
-├── index.html   # estrutura da página (navbar, filtros, gráfico, tabela, análise, fontes)
-├── style.css    # estilos próprios complementares ao Bootstrap
-├── script.js    # leitura do db.js, cálculos estatísticos, gráfico e render da tabela
-├── db.js        # base de dados (export const db) com os 49 cursos e o histórico de cotas
+├── index.html          # painel principal (hero, KPIs, filtros, gráfico, tabela, questões, fontes)
+├── curso1..6.html      # páginas dos cursos da UTFPR-PG (carregam curso.js)
+├── curso11..66.html    # páginas dos cursos da UEPG (carregam curso.js)
+├── style.css           # identidade visual (tema escuro) sobre o Bootstrap
+├── script.js           # painel principal: estatísticas, gráfico e tabela
+├── curso.js            # template dinâmico das páginas de curso
+├── nav.js              # menu lateral e rodapé compartilhados
+├── util.js             # formatadores pt-BR, paletas, estatística e tema do Chart.js
+├── db.js               # base UEPG (export const db) — 49 cursos, 2016–2025
+├── db_utfpr.js         # base UTFPR-PG (export const dbUtfpr) — 6 cursos, 2023–2025
 └── README.md
 ```
+
+O menu lateral, o rodapé, as tabelas, os gráficos e as leituras analíticas das páginas de
+curso são gerados em JavaScript a partir das bases — não há dados duplicados no HTML.
 
 ### Formato do `db.js`
 
@@ -67,13 +80,22 @@ Foram selecionados 6 cursos com série histórica completa nas 10 edições (201
 | Engenharia de Computação | Engenheiro de Softwares Computacionais (CBO 2122-05) | R$ 14.430,84 |
 | Administração | Administrador (CBO 2521-05) | R$ 5.081,07 |
 
+As páginas individuais cobrem ainda Engenharia de Software e Farmácia (UEPG) e os seis
+cursos da UTFPR-PG: Ciências Biológicas, Engenharia de Produção, Análise e Desenvolvimento
+de Sistemas, Engenharia Mecânica, Automação Industrial e Ciência da Computação.
+
 ## Fontes dos dados
 
 - **Concorrência, vagas, inscritos e notas mínimas**: informativos oficiais do Vestibular
   de Verão da UEPG (edições 2016 a 2025) — Comissão Permanente de Seleção da UEPG,
   <https://www.uepg.br/cps/>. Dados consolidados no arquivo `db.js`.
-- **Salário médio**: Portal Salário (<https://www.salario.com.br/>), com base no
+- **Salário médio (UEPG)**: Portal Salário (<https://www.salario.com.br/>), com base no
   CAGED/MTE — média salarial CLT no Brasil por CBO, consulta em agosto de 2026.
+- **Concorrência da UTFPR-PG**: relatórios de concorrência do Processo Seletivo da UTFPR —
+  Câmpus Ponta Grossa, edições 2023, 2024 e 2025, consolidados em `db_utfpr.js`. A série é
+  mais curta que a da UEPG e cobre apenas a cota de ampla concorrência (Universal).
+- **Salário médio (UTFPR-PG)**: estimativa do grupo a partir de médias de mercado
+  publicadas (CAGED/MTE e Glassdoor Brasil) — valores aproximados, não oficiais.
 
 ## Principais resultados (cota Escola Pública, 2016–2025)
 
@@ -104,3 +126,10 @@ python3 -m http.server 8000
 ## Publicação
 
 O site é estático e publicado via **GitHub Pages** (branch `main`, pasta raiz).
+
+## Identidade visual
+
+Tema escuro com fundo `#0c0f14`, superfícies `#1c2232`, acentos `#4daf8a` (verde) e
+`#5b9cf6` (azul), tipografia DM Serif Display (títulos), DM Sans (texto) e JetBrains Mono
+(rótulos e números). Os tokens estão em `:root` no `style.css` e são reaproveitados pelo
+Bootstrap e pelo Chart.js.

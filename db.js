@@ -6190,7 +6190,13 @@ export const db = {
       id: 24,
       nome: "Farmácia",
       modalidade: "Bacharelado",
-      salariosAtuais: [],
+      salariosAtuais: [
+        {
+          cargo: "Farmacêutico (CBO 2234-05)",
+          salario: 4569.96,
+          referencia: "Portal Salário (salario.com.br) / CAGED-MTE, consulta em agosto de 2026"
+        }
+      ],
       cotas: [
         {
           ano: 2016,

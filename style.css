@@ -552,6 +552,9 @@ select:focus {
   border-color: var(--accent2);
   color: var(--text);
 }
+a.chip {
+  text-decoration: none;
+}
 .chip input {
   position: absolute;
   opacity: 0;
@@ -780,6 +783,37 @@ select:focus {
   font-size: 0.82rem;
   padding: 12px;
   text-align: left;
+}
+
+/* ── RANKING E COMPARAÇÃO ───────────────────────────── */
+.tabela-dados td.posicao {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 500;
+  width: 3.5rem;
+}
+.tabela-dados td.destaque {
+  color: var(--accent);
+  font-weight: 500;
+}
+.tabela-dados td a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-strong);
+  transition: color var(--transition);
+}
+.tabela-dados td a:hover {
+  color: var(--accent2);
+}
+.tabela-confronto tbody td:first-child {
+  color: var(--muted);
+}
+.indicador-nota {
+  display: block;
+  color: var(--muted);
+  opacity: 0.75;
+  font-size: 0.76rem;
+  margin-top: 3px;
 }
 
 .curso-tag {

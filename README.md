@@ -14,6 +14,9 @@ a tendência estimada por regressão linear, a relação com a nota mínima e as
 leitura. O painel é calculado dos próprios dados, acompanha os filtros do painel principal
 e pode ser recolhido pelo botão *Ocultar*.
 
+Há também **Ranking** (`ranking.html`) e **Comparador de cursos** (`comparar.html`), ambos no
+menu lateral. Ver [Ranking e comparação](#ranking-e-comparação).
+
 ## Links
 
 - Repositório: <https://github.com/mathzs7r/PlanetaDosMacacos>
@@ -34,10 +37,15 @@ e pode ser recolhido pelo botão *Ocultar*.
 ├── index.html          # painel principal (hero, KPIs, filtros, gráfico, tabela, questões, fontes)
 ├── curso1..6.html      # páginas dos cursos da UTFPR-PG (carregam curso.js)
 ├── curso11..66.html    # páginas dos cursos da UEPG (carregam curso.js)
+├── ranking.html        # ranking dos 12 cursos por categoria (carrega ranking.js)
+├── comparar.html       # comparador de dois cursos (carrega comparar.js)
 ├── style.css           # identidade visual (tema escuro) sobre o Bootstrap
 ├── script.js           # painel principal: estatísticas, gráfico e tabela
 ├── curso.js            # template dinâmico das páginas de curso
-├── analise.js          # análise objetiva exibida ao lado de cada gráfico de linha
+├── analise.js          # análise objetiva exibida ao lado de cada gráfico, ranking e comparação
+├── catalogo.js         # catálogo dos 12 cursos e métricas do ranking/comparador
+├── ranking.js          # página de ranking
+├── comparar.js         # página de comparação
 ├── nav.js              # menu lateral e rodapé compartilhados
 ├── util.js             # formatadores pt-BR, paletas, estatística e tema do Chart.js
 ├── db.js               # base UEPG (export const db) — 49 cursos, 2016–2025
@@ -91,6 +99,37 @@ Foram selecionados 6 cursos com série histórica completa nas 10 edições (201
 As páginas individuais cobrem ainda Engenharia de Software e Farmácia (UEPG) e os seis
 cursos da UTFPR-PG: Ciências Biológicas, Engenharia de Produção, Análise e Desenvolvimento
 de Sistemas, Engenharia Mecânica, Automação Industrial e Ciência da Computação.
+
+## Ranking e comparação
+
+O `catalogo.js` reúne os 12 cursos com página própria e deriva de `db.js` / `db_utfpr.js` as
+métricas usadas nas duas páginas: concorrência média (todas as cotas somadas por edição),
+concorrência inicial e atual, variação do período, pico, inscritos e vagas médios, nota mínima
+média, desvio padrão relativo, inclinação da reta de tendência e projeção do próximo processo.
+A única informação que não vem das bases é a **duração**, tirada das matrizes curriculares
+publicadas pela UEPG e pela UTFPR.
+
+`ranking.html` ordena os cursos por 7 categorias, com filtro por instituição:
+
+| Categoria | Indicador | Melhor posição |
+| --- | --- | --- |
+| Concorrência média | candidatos por vaga | maior |
+| Remuneração | salário médio mensal | maior |
+| Duração | anos de curso | menor |
+| Retorno por ano de curso | salário ÷ anos de curso | maior |
+| Nota de corte | nota mínima média | maior |
+| Crescimento da procura | variação da concorrência no período | maior |
+| Estabilidade | desvio padrão ÷ média | menor |
+
+`comparar.html` confronta dois cursos em 14 indicadores, desenha as duas séries anuais no mesmo
+gráfico e gera uma análise objetiva do confronto: quem é mais difícil de entrar, por que a
+diferença existe (oferta de vagas × volume de inscritos), formação e retorno, o que aconteceu no
+período, o que tende a acontecer pelas retas de tendência e o que pode mudar o quadro.
+
+Limitações a considerar na leitura: as notas mínimas da UEPG e da UTFPR estão em escalas
+diferentes e não são equivalentes; os cursos da UTFPR-PG têm apenas 3 edições (2023–2025), o que
+enfraquece tendência e projeção; e os salários da UTFPR são estimativa do grupo, não fonte
+oficial.
 
 ## Fontes dos dados
 

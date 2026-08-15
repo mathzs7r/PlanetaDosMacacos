@@ -77,9 +77,15 @@ export function montarNavegacao() {
   const lista = document.createElement("ul");
   lista.className = "nav";
 
-  const home = document.createElement("li");
-  home.appendChild(link("index.html", "Início"));
-  lista.appendChild(home);
+  [
+    { href: "index.html", nome: "Início" },
+    { href: "ranking.html", nome: "Ranking" },
+    { href: "comparar.html", nome: "Comparar cursos" },
+  ].forEach((item) => {
+    const li = document.createElement("li");
+    li.appendChild(link(item.href, item.nome));
+    lista.appendChild(li);
+  });
 
   MENU.forEach((grupo) => {
     const li = document.createElement("li");

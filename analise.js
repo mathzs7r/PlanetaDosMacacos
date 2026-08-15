@@ -344,6 +344,245 @@ export function analisePainel(linhas, cursosVisiveis, cota) {
   ];
 }
 
+const pct = (v) => `${num(v)}%`;
+
+/** Análise objetiva do ranking de uma categoria (`catalogo.js`). */
+export function analiseRanking(ordenados, categoria, formatar) {
+  if (ordenados.length < 2) {
+    return [
+      {
+        titulo: "Dados insuficientes",
+        texto: "Não há cursos com esse indicador disponível para montar o ranking.",
+      },
+    ];
+  }
+  const primeiro = ordenados[0];
+  const ultimo = ordenados[ordenados.length - 1];
+  const valores = ordenados.map((r) => categoria.valor(r));
+  const m = media(valores);
+  const acimaDaMedia = ordenados.filter((r) =>
+    categoria.melhor === "maior" ? categoria.valor(r) > m : categoria.valor(r) < m,
+  );
+  const rConcorrenciaSalario = correlacao(
+    ordenados.map((r) => r.mediaConcorrencia),
+    ordenados.map((r) => r.salario ?? 0),
+  );
+  const blocos = [
+    {
+      titulo: "O que este ranking mede",
+      texto: `${categoria.descricao} Critério de ordenação: ${
+        categoria.melhor === "maior" ? "quanto maior, melhor a posição" : "quanto menor, melhor a posição"
+      }.`,
+    },
+    {
+      titulo: "Quem lidera e por quê",
+      texto:
+        `${forte(primeiro.nome)} (${primeiro.sigla}) fica em 1º com ` +
+        `${formatar(categoria.valor(primeiro))}, contra ${formatar(categoria.valor(ultimo))} do ` +
+        `último colocado (${ultimo.nome}). A média dos ${ordenados.length} cursos é ` +
+        `${formatar(m)} e ${
+          acimaDaMedia.length === 1
+            ? "apenas 1 curso fica melhor que ela"
+            : `${acimaDaMedia.length} cursos ficam melhores que ela`
+        } — quanto menos cursos acima da média, mais concentrado no topo está o ranking.`,
+    },
+  ];
+
+  if (categoria.id === "concorrencia") {
+    blocos.push({
+      titulo: "Por que a ordem é essa",
+      texto:
+        `Concorrência é razão entre inscritos e vagas, então cursos pequenos aparecem mais alto ` +
+        `mesmo com menos candidatos. ${primeiro.nome} recebe ` +
+        `${num(primeiro.candidatosMedios)} inscritos por edição para ${num(primeiro.vagasMedias)} ` +
+        `vagas; ${ultimo.nome} recebe ${num(ultimo.candidatosMedios)} para ` +
+        `${num(ultimo.vagasMedias)}. Comparar UEPG e UTFPR no mesmo ranking exagera a diferença: ` +
+        "os processos seletivos têm portes e calendários distintos.",
+    });
+    blocos.push({
+      titulo: "O que tende a acontecer",
+      texto: textoRankingTendencia(ordenados),
+    });
+  }
+
+  if (categoria.id === "remuneracao" || categoria.id === "retorno") {
+    blocos.push({
+      titulo: "Salário explica a procura?",
+      texto:
+        `A correlação entre concorrência média e salário médio nos cursos listados é ` +
+        `${forte(num(rConcorrenciaSalario))} (${forcaCorrelacao(rConcorrenciaSalario)}). ` +
+        (Math.abs(rConcorrenciaSalario) < 0.4
+          ? "Ou seja, remuneração não é o que determina a disputa: cursos de TI pagam entre os " +
+            "maiores salários e ainda assim têm concorrência bem menor que Medicina, porque a " +
+            "oferta de vagas em tecnologia cresceu e há muitas alternativas de formação."
+          : "Ou seja, os cursos melhor pagos também tendem a ser os mais disputados neste recorte.") +
+        " Os salários da UTFPR são estimativa do grupo, não fonte oficial — trate as posições " +
+        "como aproximação.",
+    });
+  }
+
+  if (categoria.id === "duracao" || categoria.id === "retorno") {
+    blocos.push({
+      titulo: "Duração e custo de oportunidade",
+      texto:
+        `Cursos curtos (tecnólogos de 3 anos) chegam ao mercado antes e por isso lideram o ` +
+        `retorno por ano de curso, enquanto ${
+          ordenados.find((r) => r.anosCurso >= 6)?.nome ?? "os cursos mais longos"
+        } só remunera depois de 6 anos de formação. A leitura correta é: o ranking de duração ` +
+        "mostra rapidez de entrada no mercado, não qualidade nem teto salarial da carreira.",
+    });
+  }
+
+  if (categoria.id === "nota") {
+    blocos.push({
+      titulo: "Cuidado com as escalas",
+      texto:
+        "A UEPG divulga nota mínima em pontos do vestibular e a UTFPR em outra escala, então " +
+        "compare apenas cursos da mesma instituição. Dentro da UEPG a nota acompanha o prestígio " +
+        "do curso; na UTFPR ela varia mais com a dificuldade da prova do ano.",
+    });
+  }
+
+  if (categoria.id === "crescimento" || categoria.id === "estabilidade") {
+    blocos.push({
+      titulo: "O que tende a acontecer",
+      texto: textoRankingTendencia(ordenados),
+    });
+    blocos.push({
+      titulo: "Por que umas linhas oscilam mais",
+      texto:
+        "Variação relativa alta quase sempre indica mudança de vagas entre edições, não perda de " +
+        "interesse: quando a instituição corta vagas a concorrência salta em um ano e volta no " +
+        "seguinte. Cursos com oferta estável (turmas fixas) aparecem no fim deste ranking.",
+    });
+  }
+
+  return blocos;
+}
+
+function textoRankingTendencia(ordenados) {
+  const alta = ordenados.filter((r) => r.inclinacao > 0.05);
+  const queda = ordenados.filter((r) => r.inclinacao < -0.05);
+  const destaque = [...ordenados].sort((a, b) => b.inclinacao - a.inclinacao)[0];
+  const pior = [...ordenados].sort((a, b) => a.inclinacao - b.inclinacao)[0];
+  return (
+    `${alta.length} dos ${ordenados.length} cursos têm tendência de alta na concorrência e ` +
+    `${queda.length} de queda. O avanço mais rápido é de ${forte(destaque.nome)} ` +
+    `(${num(destaque.inclinacao)} candidatos por vaga a cada ano, projeção de ` +
+    `${num(destaque.projecao)} no próximo processo) e a maior retração é de ${pior.nome} ` +
+    `(${num(pior.inclinacao)}/ano, projeção de ${num(pior.projecao)}). Mantidas as vagas atuais, ` +
+    "a tendência é as posições do topo continuarem as mesmas: as diferenças de patamar são " +
+    "grandes demais para serem revertidas por uma única edição."
+  );
+}
+
+/** Análise objetiva da comparação entre dois cursos. */
+export function analiseComparacao(a, b, formatarMoeda) {
+  const vantagemConcorrencia = a.mediaConcorrencia >= b.mediaConcorrencia ? a : b;
+  const menosDisputado = vantagemConcorrencia === a ? b : a;
+  const anosComuns = a.anos.filter((ano) => b.anos.includes(ano));
+  const salarioMaior = (a.salario ?? 0) >= (b.salario ?? 0) ? a : b;
+  const salarioMenor = salarioMaior === a ? b : a;
+  const retornoMaior = (a.salarioPorAnoDeCurso ?? 0) >= (b.salarioPorAnoDeCurso ?? 0) ? a : b;
+  const maisEstavel = a.variacaoRelativa <= b.variacaoRelativa ? a : b;
+  const blocos = [];
+
+  blocos.push({
+    titulo: "Quem é mais difícil de entrar",
+    texto:
+      `${forte(vantagemConcorrencia.nome)} tem média de ` +
+      `${num(vantagemConcorrencia.mediaConcorrencia)} candidatos por vaga contra ` +
+      `${num(menosDisputado.mediaConcorrencia)} de ${menosDisputado.nome} — ` +
+      `${num(
+        vantagemConcorrencia.mediaConcorrencia / (menosDisputado.mediaConcorrencia || 1),
+      )}x mais disputa. ` +
+      (anosComuns.length
+        ? `A comparação tem ${
+            anosComuns.length === 1
+              ? `apenas 1 edição em comum (${anosComuns[0]})`
+              : `${anosComuns.length} edições em comum (${anosComuns[0]}–${anosComuns[anosComuns.length - 1]})`
+          }; fora dessa janela cada curso tem histórico próprio.`
+        : "Atenção: os dois cursos não têm nenhum ano em comum na base, então a comparação é " +
+          "apenas de patamar médio, não de disputa simultânea."),
+  });
+
+  blocos.push({
+    titulo: "Por que a diferença existe",
+    texto:
+      `${a.nome} recebe em média ${num(a.candidatosMedios)} inscritos para ` +
+      `${num(a.vagasMedias)} vagas; ${b.nome}, ${num(b.candidatosMedios)} para ` +
+      `${num(b.vagasMedias)}. ` +
+      (a.vagasMedias < b.vagasMedias
+        ? `A oferta menor de ${a.nome} amplifica a concorrência mesmo quando os dois têm procura parecida.`
+        : `A oferta menor de ${b.nome} amplifica a concorrência mesmo quando os dois têm procura parecida.`) +
+      (a.instituicao !== b.instituicao
+        ? " Como são instituições diferentes (UEPG e UTFPR), parte da diferença vem do porte do " +
+          "processo seletivo e do número de cotas divulgadas, não só da procura."
+        : ""),
+  });
+
+  blocos.push({
+    titulo: "Formação e retorno",
+    texto:
+      `${a.nome}: ${a.anosCurso} anos de curso e salário médio de ` +
+      `${formatarMoeda(a.salario)} (${a.cargo}). ${b.nome}: ${b.anosCurso} anos e ` +
+      `${formatarMoeda(b.salario)} (${b.cargo}). ${forte(salarioMaior.nome)} paga ` +
+      `${num(((salarioMaior.salario - salarioMenor.salario) / (salarioMenor.salario || 1)) * 100)}% ` +
+      `mais, e o melhor retorno por ano investido é de ${forte(retornoMaior.nome)} ` +
+      `(${formatarMoeda(retornoMaior.salarioPorAnoDeCurso)} por ano de curso).`,
+  });
+
+  blocos.push({
+    titulo: "O que aconteceu no período",
+    texto:
+      `${a.nome} saiu de ${num(a.concorrenciaInicial)} candidatos por vaga em ${a.anos[0]} para ` +
+      `${num(a.concorrenciaAtual)} em ${a.anos[a.anos.length - 1]} (${pct(a.variacaoPeriodo)}), ` +
+      `com pico de ${num(a.pico.concorrencia)} em ${a.pico.ano}. ${b.nome} foi de ` +
+      `${num(b.concorrenciaInicial)} (${b.anos[0]}) para ${num(b.concorrenciaAtual)} ` +
+      `(${b.anos[b.anos.length - 1]}, ${pct(b.variacaoPeriodo)}), com pico de ` +
+      `${num(b.pico.concorrencia)} em ${b.pico.ano}.`,
+  });
+
+  blocos.push({
+    titulo: "O que tende a acontecer",
+    texto:
+      `Pelas retas de tendência, ${a.nome} caminha ${num(a.inclinacao)} candidatos por vaga por ` +
+      `ano (projeção de ${forte(num(a.projecao))} no próximo processo) e ${b.nome}, ` +
+      `${num(b.inclinacao)}/ano (projeção de ${forte(num(b.projecao))}). ` +
+      (Math.sign(a.inclinacao) === Math.sign(b.inclinacao)
+        ? "Os dois se movem na mesma direção, o que sugere causa comum — mudança no calendário " +
+          "e no total de vagas ofertadas pela instituição."
+        : "Eles se movem em direções opostas, então a procura está migrando de um perfil de curso " +
+          "para o outro.") +
+      ` A comparação é mais confiável em ${maisEstavel.nome}, que oscila apenas ` +
+      `${pct(maisEstavel.variacaoRelativa)} em torno da média.`,
+  });
+
+  blocos.push({
+    titulo: "O que pode mudar esse quadro",
+    texto:
+      "Três fatores mexem no resultado do próximo processo: (1) corte ou criação de vagas — o " +
+      "efeito mais forte e imediato, já que a concorrência é uma razão; (2) abertura de novas " +
+      "cotas, que redistribui os inscritos entre linhas e reduz a disputa na ampla concorrência; " +
+      "(3) mudança de turno ou de campus, que altera o público que se inscreve. Nenhum desses " +
+      "fatores depende da procura pelo curso, por isso uma alta isolada não deve ser lida como " +
+      "aumento de interesse.",
+  });
+
+  const curtas = [a, b].filter((r) => r.edicoes <= 4);
+  if (curtas.length) {
+    blocos.push({
+      titulo: "Ressalva",
+      texto:
+        `${curtas.map((r) => `${r.nome} tem apenas ${r.edicoes} edições`).join(" e ")} na base ` +
+        "oficial, o que limita tendência e correlação. Os salários da UTFPR são estimativa do " +
+        "grupo a partir de médias de mercado, não fonte oficial.",
+    });
+  }
+
+  return blocos;
+}
+
 /**
  * Painel lateral com a análise do gráfico e botão de mostrar/ocultar.
  * `montarBlocos` é chamada a cada atualização para permitir análise dinâmica.

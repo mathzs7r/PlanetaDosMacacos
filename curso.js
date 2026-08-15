@@ -3,8 +3,7 @@
  * tabela filtrável e leitura dos dados) a partir do db.js / db_utfpr.js.
  */
 import { analiseCurso, criarPainelAnalise } from "./analise.js";
-import { db } from "./db.js";
-import { dbUtfpr } from "./db_utfpr.js";
+import { cursoDoBanco, linhasCurso } from "./catalogo.js";
 import { montarNavegacao, montarRodape } from "./nav.js";
 import {
   CORES_COTA,
@@ -23,48 +22,6 @@ const FONTE = {
   uepg: "Informativos oficiais do Vestibular de Verão da UEPG (CPS-UEPG)",
   utfpr: "Relatórios de concorrência do Processo Seletivo da UTFPR — Câmpus Ponta Grossa",
 };
-
-function localizarCurso(instituicao, nome) {
-  const base = instituicao === "uepg" ? db : dbUtfpr;
-  return base.cursos.find((curso) => curso.nome === nome);
-}
-
-/** Uma linha por ano × tipo de cota, incluindo o total do ano. */
-function linhas(curso) {
-  const resultado = [];
-  [...curso.cotas]
-    .sort((a, b) => a.ano - b.ano)
-    .forEach((cota) => {
-      const validas = cota.tipoCota.filter((t) => t.vagas && t.candidatos);
-      validas.forEach((t) =>
-        resultado.push({
-          ano: cota.ano,
-          tipo: t.tipo,
-          turno: cota.turno ?? "—",
-          candidatos: t.candidatos,
-          vagas: t.vagas,
-          concorrencia: t.candidatos / t.vagas,
-          notaMinima: t.notaMinima,
-          salario: cota.salarioMedio ?? curso.salariosAtuais[0]?.salario ?? null,
-        }),
-      );
-      if (validas.length > 1) {
-        const candidatos = validas.reduce((s, t) => s + t.candidatos, 0);
-        const vagas = validas.reduce((s, t) => s + t.vagas, 0);
-        resultado.push({
-          ano: cota.ano,
-          tipo: "Total",
-          turno: cota.turno ?? "—",
-          candidatos,
-          vagas,
-          concorrencia: candidatos / vagas,
-          notaMinima: null,
-          salario: cota.salarioMedio ?? curso.salariosAtuais[0]?.salario ?? null,
-        });
-      }
-    });
-  return resultado;
-}
 
 function montarHero(curso, instituicao, dados) {
   const anos = [...new Set(dados.map((l) => l.ano))];
@@ -422,7 +379,7 @@ function montarLeitura(curso, dados) {
 }
 
 export function renderCurso({ instituicao, nome }) {
-  const curso = localizarCurso(instituicao, nome);
+  const curso = cursoDoBanco(instituicao, nome);
   const main = document.getElementById("conteudo");
 
   montarNavegacao();
@@ -440,7 +397,7 @@ export function renderCurso({ instituicao, nome }) {
   }
 
   aplicarTemaChart(Chart);
-  const dados = linhas(curso);
+  const dados = linhasCurso(curso);
 
   document.title = `${curso.nome} — Concorrência em Cotas Públicas`;
   document.body.insertBefore(montarHero(curso, instituicao, dados), main);
